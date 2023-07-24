@@ -16,7 +16,7 @@ def TopologicalSort(graph):
         if isDAG is False:
             print("Error: The graph is NOT a DAG!")
             return False,vertex_list
-        return True, vertex_list
+    return True, vertex_list
 
 def AntiTopologicalSort(graph):
     tmp_graph = graph
@@ -33,8 +33,28 @@ def AntiTopologicalSort(graph):
         if isDAG is False:
             print("Error: The graph is NOT a DAG!")
             return False,vertex_list
-        return True, vertex_list
+    return True, vertex_list
 
+def VEPath(graph):
+
+def VLPath(graph,vedict):
+
+def EPath(graph,vedict):
+
+def LPath(graph,vldict):
+
+def CPath(edict,ldict):
 
 def CriticalPath(graph):
+    isTopo,_=TopologicalSort(graph)
+    vedict=VEPath(graph)
+    vldict=VLPath(graph,vedict)
+
+    edict=EPath(graph,vedict)
+    ldict=LPath(graph,vldict)
+
+    ddict=CPath(edict,ldict)
+
+    critical_path=[]
+
     pass
