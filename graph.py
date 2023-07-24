@@ -34,6 +34,12 @@ class Edge:
     def __repr__(self):
         return "（" + self.start_vertex.name + "," + self.end_vertex.name + ")"
 
+    def __hash__(self):
+        return hash(self.start_vertex.name + self.end_vertex.name)
+
+    def __eq__(self, other):
+        return self.start_vertex.name == other.start_vertex.name and self.end_vertex.name == other.end_vertex.name
+
 
 class Graph:
     # 初始化
@@ -55,6 +61,9 @@ class Graph:
     def add_edge(self, start_vertex_name, end_vertex_name, weight):
         start_vertex = Vertex(str(start_vertex_name))
         end_vertex = Vertex(str(end_vertex_name))
+        if weight <= 0:
+            print("Error: Weight must be positive!")
+            return False
         if start_vertex in self.adj_list:
             if end_vertex not in self.adj_list:
                 print("Error: Can't find end_vertex %s" % end_vertex.name)
