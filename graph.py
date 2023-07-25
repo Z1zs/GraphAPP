@@ -35,7 +35,7 @@ class Edge:
         return "（" + self.start_vertex.name + "," + self.end_vertex.name + ")"
 
     def __hash__(self):
-        return hash(self.start_vertex.name + self.end_vertex.name)
+        return hash(self.start_vertex.name + "|" + self.end_vertex.name)
 
     def __eq__(self, other):
         return self.start_vertex.name == other.start_vertex.name and self.end_vertex.name == other.end_vertex.name
@@ -67,6 +67,9 @@ class Graph:
         if start_vertex in self.adj_list:
             if end_vertex not in self.adj_list:
                 print("Error: Can't find end_vertex %s" % end_vertex.name)
+                return False
+            else:
+                print("Error: Edge %s already exists.")
                 return False
             edge = Edge(start_vertex, end_vertex, weight)
             self.in_degree_dict[end_vertex] = self.in_degree_dict[end_vertex] + 1
@@ -139,6 +142,20 @@ class Graph:
             return False
         else:
             return self.in_degree_dict[vertex]
+
+    # 获取前驱节点
+    def get_predecessor(self):
+        predecessor_dict = {}
+        for start_vertex in self.adj_list.keys():
+            predecessor_dict[start_vertex] = []
+        for start_vertex in self.adj_list.keys():
+            for edge in self.adj_list[start_vertex]:
+                # 遍历所有边结点
+                if edge.end_vertex not in predecessor_dict:
+                    predecessor_dict[edge.end_vertex].append(edge)
+                else:
+                    predecessor_dict[edge.end_vertex].append(edge)
+        return predecessor_dict
 
     # 检查错误
     def check_vertex(self):
