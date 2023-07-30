@@ -1,5 +1,6 @@
 import math
 import sys
+import numpy as np
 from graph import Graph
 from typing import Dict
 from PyQt5.QtCore import (QEasingCurve, QLineF,
@@ -10,7 +11,7 @@ from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
                              QGraphicsObject, QGraphicsScene, QGraphicsView,
                              QStyleOptionGraphicsItem, QVBoxLayout, QWidget)
 
-from MyAlgorithm import CriticalPath
+from MyAlgorithm import CriticalPath, TopologicalSort
 
 
 class NodeItem(QGraphicsObject):
@@ -245,7 +246,7 @@ class EdgeItem(QGraphicsItem):
 
 
 class GraphView(QGraphicsView):
-    def __init__(self, graph:Graph, show_cpath=False, parent=None):
+    def __init__(self, graph: Graph, show_cpath=False, parent=None):
         """GraphView constructor
 
         This widget can display a directed graph
@@ -259,7 +260,8 @@ class GraphView(QGraphicsView):
         self.setScene(self._scene)
 
         # Used to add space between nodes
-        self._graph_scale = 200
+        self._graph_xscale = 10
+        self._graph_yscale = 20
 
         # Map node name to Node object {str=>Node}
         self._nodes_map = {}
@@ -271,25 +273,32 @@ class GraphView(QGraphicsView):
             self._load_critical_path()
         self.set_layout()
 
-    def layout_function(self, graph):
+    def spring_layout(self):
+        isTopo, TPlist = TopologicalSort(self._graph)
+        # 非拓扑序列补齐
+        if isTopo is False:
+            for nd in self._graph.get_vertices():
+                if nd not in TPlist:
+                    TPlist.append(nd)
+
+        # 返回坐标值
         pos_dict = {}
-        node_list = list(self._graph.adj_list.keys())
-        num = len(node_list)
-        for i in range(num):
-            arc = 2 * 3.14159 * i / num
-            pos_dict[node_list[i]] = [math.cos(arc), math.sin(arc)]
+        for i in range(len(TPlist)):
+            x = (i + 1) * 10 + np.random.randn()
+            y = np.random.randn() * 10
+            pos_dict[TPlist[i]] = [x, y]
         return pos_dict
 
     def set_layout(self):
         # Compute node position from layout function
-        positions = self.layout_function(self._graph)
-
+        positions = self.spring_layout()
+        print(positions)
         # Change position of all nodes using an animation
         self.animations = QParallelAnimationGroup()
         for node, pos in positions.items():
             x, y = pos
-            x *= self._graph_scale
-            y *= self._graph_scale
+            x *= self._graph_xscale
+            y *= self._graph_yscale
             item = self._nodes_map[node]
 
             animation = QPropertyAnimation(item, b"pos")
@@ -327,8 +336,8 @@ class GraphView(QGraphicsView):
 
         # Add nodes
         for node in self._graph.adj_list.keys():
-            data={"showif":0,"vevalue":self.vedict[node],"vlvalue":self.vldict[node]}
-            item = NodeItem(node.name,data)
+            data = {"showif": 0, "vevalue": self.vedict[node], "vlvalue": self.vldict[node]}
+            item = NodeItem(node.name, data)
             self.scene().addItem(item)
             self._nodes_map[node] = item
         for node in self._graph.adj_list.keys():
