@@ -68,12 +68,15 @@ class Graph:
             if end_vertex not in self.adj_list:
                 print("Error: Can't find end_vertex %s" % end_vertex.name)
                 return False
-            else:
-                print("Error: Edge %s already exists.")
+            elif self.has_edge(start_vertex, end_vertex):
+                print("Error: Edge already exist!")
                 return False
             edge = Edge(start_vertex, end_vertex, weight)
             self.in_degree_dict[end_vertex] = self.in_degree_dict[end_vertex] + 1
             self.adj_list[start_vertex].append(edge)
+        else:
+            print("Error: Can't find end_vertex %s" % start_vertex.name)
+            return False
 
     # 删除顶点
     def remove_vertex(self, vertex_name):

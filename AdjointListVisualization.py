@@ -213,8 +213,6 @@ class AdjointListItem(QWidget):
         self.update_ui()
 
 
-
-
 app = QApplication([])
 graph = Graph()
 graph.add_vertex("v1")

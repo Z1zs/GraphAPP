@@ -1,9 +1,10 @@
 from graph import Graph, Vertex, Edge
 from typing import List, Dict
+import copy
 
 
 def TopologicalSort(graph: Graph):
-    tmp_graph = graph
+    tmp_graph = copy.deepcopy(graph)
     vertex_list = []
     isDAG = False
     while tmp_graph.in_degree_dict != {}:
@@ -16,12 +17,12 @@ def TopologicalSort(graph: Graph):
                 break
         if isDAG is False:
             print("Error: The graph is NOT a DAG!")
-            return False, vertex_list
-    return True, vertex_list
+            return isDAG, vertex_list
+    return isDAG, vertex_list
 
 
 def AntiTopologicalSort(graph: Graph):
-    tmp_graph = graph
+    tmp_graph = copy.deepcopy(graph)
     vertex_list = []
     isDAG = False
     while tmp_graph.adj_list != {}:
@@ -34,13 +35,13 @@ def AntiTopologicalSort(graph: Graph):
                 break
         if isDAG is False:
             print("Error: The graph is NOT a DAG!")
-            return False, vertex_list
-    return True, vertex_list
+            return isDAG, vertex_list
+    return isDAG, vertex_list
 
 
 def VEPath(graph: Graph, tplist: List[Vertex]):
     predecessor_dict = graph.get_predecessor()
-    print(predecessor_dict)
+    # print(predecessor_dict)
     ve_dict = {}
     for vertex in tplist:
         if graph.in_degree_dict[vertex] == 0:
@@ -106,5 +107,38 @@ def CriticalPath(graph: Graph):
 
     ddict = DPath(edict, ldict)
 
-    critical_path = [edge for edge in ddict.keys() if ddict[edge] == 0]  # 关键路径
+    critical_path = []  # 关键路径
+    for edge in ddict.keys():
+        if ddict[edge] == 0:
+            print(edge)
+            critical_path.append(edge)
+
     return critical_path, vedict, vldict, edict, ldict, ddict
+
+
+if __name__ == "__main__":
+    graph = Graph()
+    graph.add_vertex("v1")
+    graph.add_vertex("v2")
+    graph.add_vertex("v3")
+    graph.add_vertex("v4")
+    graph.add_vertex("v5")
+    graph.add_vertex("v6")
+    graph.add_vertex("v7")
+    graph.add_vertex("v8")
+    graph.add_vertex("v9")
+
+    graph.add_edge("v1", "v2", 6)
+    graph.add_edge("v1", "v3", 4)
+    graph.add_edge("v1", "v4", 5)
+    graph.add_edge("v2", "v5", 1)
+    graph.add_edge("v3", "v5", 1)
+    graph.add_edge("v4", "v6", 2)
+    graph.add_edge("v5", "v7", 9)
+    graph.add_edge("v5", "v8", 7)
+    graph.add_edge("v6", "v8", 4)
+    graph.add_edge("v7", "v9", 2)
+    graph.add_edge("v8", "v9", 4)
+
+    critical_path, vedict, vldict, edict, ldict, ddict = CriticalPath(graph)
+    # print(critical_path)
