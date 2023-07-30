@@ -1,12 +1,12 @@
 import math
 import sys
 from graph import Graph
-from typing import List, Dict
+from typing import Dict
 from PyQt5.QtCore import (QEasingCurve, QLineF,
                           QParallelAnimationGroup, QPointF,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
-from PyQt5.QtWidgets import (QApplication, QComboBox, QGraphicsItem,
+from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
                              QGraphicsObject, QGraphicsScene, QGraphicsView,
                              QStyleOptionGraphicsItem, QVBoxLayout, QWidget)
 
