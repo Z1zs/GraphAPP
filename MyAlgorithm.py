@@ -139,6 +139,3 @@ if __name__ == "__main__":
     graph.add_edge("v6", "v8", 4)
     graph.add_edge("v7", "v9", 2)
     graph.add_edge("v8", "v9", 4)
-
-    critical_path, vedict, vldict, edict, ldict, ddict = CriticalPath(graph)
-    # print(critical_path)
