@@ -1,9 +1,9 @@
 import math
 import sys
 import numpy as np
-from graph import Graph
+from graph import Graph, Vertex
 from typing import Dict
-from PyQt5.QtCore import (QEasingCurve, QLineF,
+from PyQt5.QtCore import (QEasingCurve, QLineF, QSequentialAnimationGroup,
                           QParallelAnimationGroup, QPointF,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
@@ -94,7 +94,7 @@ class NodeItem(QGraphicsObject):
         return super().itemChange(change, value)
 
 
-class EdgeItem(QGraphicsItem):
+class EdgeItem(QGraphicsObject):
     def __init__(self, source: NodeItem, dest: NodeItem, data: Dict[str, int] = None, color: QColor = QColor("green"),
                  parent: QGraphicsItem = None):
         """Edge constructor
@@ -263,14 +263,20 @@ class GraphView(QGraphicsView):
         self._graph_xscale = 10
         self._graph_yscale = 20
 
-        # Map node name to Node object {str=>Node}
+        # Map node/edge name to Node/Edge object {str=>Node}
         self._nodes_map = {}
+        self.edge_map = {}
+
+        # map node to animation
+        self.topo_anime_map = {}
+        self.topo_animation = QSequentialAnimationGroup()
 
         if show_cpath is False:
             self._load_graph()
         else:
             self.cpath, self.vedict, self.vldict, self.edict, self.ldict, self.ddict = CriticalPath(self._graph)
             self._load_critical_path()
+        self.load_topo_animation()
         self.set_layout()
 
     def spring_layout(self):
@@ -294,7 +300,7 @@ class GraphView(QGraphicsView):
         positions = self.spring_layout()
         print(positions)
         # Change position of all nodes using an animation
-        self.animations = QParallelAnimationGroup()
+        self.locate_animations = QParallelAnimationGroup()
         for node, pos in positions.items():
             x, y = pos
             x *= self._graph_xscale
@@ -305,9 +311,9 @@ class GraphView(QGraphicsView):
             animation.setDuration(1000)
             animation.setEndValue(QPointF(x, y))
             animation.setEasingCurve(QEasingCurve.OutExpo)
-            self.animations.addAnimation(animation)
+            self.locate_animations.addAnimation(animation)
 
-        self.animations.start()
+        self.locate_animations.start()
 
     def _load_graph(self):
 
@@ -320,6 +326,7 @@ class GraphView(QGraphicsView):
             item = NodeItem(node.name, data)
             self.scene().addItem(item)
             self._nodes_map[node] = item
+
         for node in self._graph.adj_list.keys():
             # Add edges
             for edge in self._graph.adj_list[node]:
@@ -327,7 +334,40 @@ class GraphView(QGraphicsView):
                 dest = self._nodes_map[edge.end_vertex]
 
                 data = {"weight": edge.weight, "showif": 0}
-                self.scene().addItem(EdgeItem(source, dest, data))
+                edge_item = EdgeItem(source, dest, data)
+                self.edge_map[edge] = edge_item
+                self.scene().addItem(edge_item)
+
+    def load_topo_animation(self):
+        for node in self._graph.adj_list.keys():
+            panime = QParallelAnimationGroup()
+            # 动画
+            animation = QPropertyAnimation(self._nodes_map[node], b"visible")
+            animation.setDuration(1000)
+            animation.setStartValue(1)
+            animation.setEndValue(0)
+            animation.setEasingCurve(QEasingCurve.OutExpo)
+            panime.addAnimation(animation)
+
+            # Add edges
+            for edge in self._graph.adj_list[node]:
+                animation = QPropertyAnimation(self.edge_map[edge], b"visible")
+                animation.setDuration(1000)
+                animation.setStartValue(1)
+                animation.setEndValue(0)
+                animation.setEasingCurve(QEasingCurve.OutExpo)
+                panime.addAnimation(animation)
+            self.topo_anime_map[node] = panime
+
+    def run_topo_animation(self):
+        istp, tplist = TopologicalSort(self._graph)
+        if istp is False:
+            return False
+        for node in tplist:
+            # print(node)
+            # print(self.topo_anime_map.keys())
+            self.topo_animation.addAnimation(self.topo_anime_map[node])
+        self.topo_animation.start()
 
     def _load_critical_path(self):
 
@@ -348,10 +388,13 @@ class GraphView(QGraphicsView):
 
                 data = {"showif": 1, "weight": edge.weight, "evalue": self.edict[edge], "lvalue": self.ldict[edge],
                         "dvalue": self.ddict[edge]}
+                item = None
                 if edge in self.cpath:
-                    self.scene().addItem(EdgeItem(source, dest, data, QColor("cyan")))
+                    item = EdgeItem(source, dest, data, QColor("cyan"))
                 else:
-                    self.scene().addItem(EdgeItem(source, dest, data))
+                    item = EdgeItem(source, dest, data)
+                self.scene().addItem(item)
+                self.edge_map[edge] = item
 
 
 class MainWindow(QWidget):
