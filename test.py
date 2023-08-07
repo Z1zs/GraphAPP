@@ -1,3 +1,4 @@
+'''
 from graph import Graph
 from MyAlgorithm import AntiTopologicalSort
 
@@ -12,3 +13,5 @@ graph.add_vertex("v4")
 flag, vlist = AntiTopologicalSort(graph)
 print(flag)
 print(vlist)
+'''
+

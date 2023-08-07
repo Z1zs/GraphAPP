@@ -1,9 +1,9 @@
 import math
 import sys
 import numpy as np
-from graph import Graph, Vertex
+from graph import Graph, Vertex, Edge
 from typing import Dict
-from PyQt5.QtCore import (QEasingCurve, QLineF, QSequentialAnimationGroup,
+from PyQt5.QtCore import (QEasingCurve, QLineF,
                           QParallelAnimationGroup, QPointF,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
@@ -20,7 +20,7 @@ class NodeItem(QGraphicsObject):
         super().__init__(parent)
         self._name = name
         self._edges = []
-        self._color = "#5AD469"
+        self._color = QColor("green").darker()
         self._radius = 30
         self._rect = QRectF(0, 0, self._radius * 2, self._radius * 2)
         self.setFlag(QGraphicsItem.ItemIsMovable)
@@ -57,14 +57,14 @@ class NodeItem(QGraphicsObject):
         painter.setRenderHints(QPainter.Antialiasing)
         painter.setPen(
             QPen(
-                QColor(self._color).darker(),
+                self._color,
                 2,
                 Qt.SolidLine,
                 Qt.RoundCap,
                 Qt.RoundJoin,
             )
         )
-        painter.setBrush(QBrush(QColor(self._color)))
+        painter.setBrush(QBrush(self._color))
         painter.drawEllipse(self.boundingRect())
         painter.setPen(QPen(QColor("white")))
         painter.drawText(self.boundingRect(), Qt.AlignCenter, self._name)
@@ -242,7 +242,6 @@ class EdgeItem(QGraphicsObject):
             )
             painter.drawLine(self._line)
             self._draw_arrow(painter, self._line.p1(), self._arrow_target())
-            self._arrow_target()
 
 
 class GraphView(QGraphicsView):
@@ -266,17 +265,13 @@ class GraphView(QGraphicsView):
         # Map node/edge name to Node/Edge object {str=>Node}
         self._nodes_map = {}
         self.edge_map = {}
-
-        # map node to animation
-        self.topo_anime_map = {}
-        self.topo_animation = QSequentialAnimationGroup()
+        self.hidden_animation_map = {}
 
         if show_cpath is False:
             self._load_graph()
         else:
             self.cpath, self.vedict, self.vldict, self.edict, self.ldict, self.ddict = CriticalPath(self._graph)
             self._load_critical_path()
-        self.load_topo_animation()
         self.set_layout()
 
     def spring_layout(self):
@@ -295,10 +290,54 @@ class GraphView(QGraphicsView):
             pos_dict[TPlist[i]] = [x, y]
         return pos_dict
 
+    def add_node(self, node: Vertex):
+        # 创建实例
+        data = {"showif": 0}
+        item = NodeItem(node.name, data)
+        self.scene().addItem(item)
+        self._nodes_map[node] = item
+        # 调整坐标
+        x= (len(self._graph.get_vertices()) + 1) * 10 + np.random.randn()
+        y = np.random.randn() * 10
+        x *= self._graph_xscale
+        y *= self._graph_yscale
+        item = self._nodes_map[node]
+
+        self.add_animation = QPropertyAnimation(item, b"pos")
+        self.add_animation.setDuration(1000)
+        self.add_animation.setEndValue(QPointF(x, y))
+        self.add_animation.setEasingCurve(QEasingCurve.OutExpo)
+        self.add_animation.start()
+
+    def remove_node(self, node: Vertex):
+        if node in self._nodes_map:
+            item = self._nodes_map[node]
+            self._nodes_map.pop(node)
+            self.scene().removeItem(item)
+        for edge in self.edge_map.keys():
+            if edge.end_vertex==node or edge.start_vertex==node:
+                item = self.edge_map[edge]
+                self._nodes_map.pop(edge)
+                self.scene().removeItem(item)
+
+    def remove_edge(self, edge: Edge):
+        if edge in self.edge_map:
+            item = self.edge_map[edge]
+            self.edge_map.pop(edge)
+            self.scene().removeItem(item)
+
+    def add_edge(self, edge: Edge):
+        source = self._nodes_map[edge.start_vertex]
+        dest = self._nodes_map[edge.end_vertex]
+
+        data = {"weight": edge.weight, "showif": 0}
+        edge_item = EdgeItem(source, dest, data)
+        self.edge_map[edge] = edge_item
+        self.scene().addItem(edge_item)
+
     def set_layout(self):
         # Compute node position from layout function
         positions = self.spring_layout()
-        print(positions)
         # Change position of all nodes using an animation
         self.locate_animations = QParallelAnimationGroup()
         for node, pos in positions.items():
@@ -338,36 +377,46 @@ class GraphView(QGraphicsView):
                 self.edge_map[edge] = edge_item
                 self.scene().addItem(edge_item)
 
-    def load_topo_animation(self):
-        for node in self._graph.adj_list.keys():
-            panime = QParallelAnimationGroup()
-            # 动画
-            animation = QPropertyAnimation(self._nodes_map[node], b"visible")
+    def hidden_node_animation(self, node):
+        hidden_anime = QParallelAnimationGroup()
+        # 动画
+        animation = QPropertyAnimation(self._nodes_map[node], b"opacity")
+        animation.setDuration(1000)
+        animation.setStartValue(1)
+        animation.setEndValue(0)
+        animation.setEasingCurve(QEasingCurve.OutExpo)
+        hidden_anime.addAnimation(animation)
+
+        # Add edges
+        for edge in self._graph.adj_list[node]:
+            animation = QPropertyAnimation(self.edge_map[edge], b"opacity")
             animation.setDuration(1000)
             animation.setStartValue(1)
             animation.setEndValue(0)
             animation.setEasingCurve(QEasingCurve.OutExpo)
-            panime.addAnimation(animation)
+            hidden_anime.addAnimation(animation)
+        self.hidden_animation_map[node] = hidden_anime
+        return self.hidden_animation_map[node]
 
-            # Add edges
-            for edge in self._graph.adj_list[node]:
-                animation = QPropertyAnimation(self.edge_map[edge], b"visible")
-                animation.setDuration(1000)
-                animation.setStartValue(1)
-                animation.setEndValue(0)
-                animation.setEasingCurve(QEasingCurve.OutExpo)
-                panime.addAnimation(animation)
-            self.topo_anime_map[node] = panime
-
-    def run_topo_animation(self):
-        istp, tplist = TopologicalSort(self._graph)
-        if istp is False:
-            return False
-        for node in tplist:
-            # print(node)
-            # print(self.topo_anime_map.keys())
-            self.topo_animation.addAnimation(self.topo_anime_map[node])
-        self.topo_animation.start()
+    def recover_all_animation(self):
+        self.recover_animation = QParallelAnimationGroup()
+        for node in self._nodes_map.keys():
+            # if not self._nodes_map[node].isVisible():
+            animation = QPropertyAnimation(self._nodes_map[node], b"opacity")
+            animation.setDuration(1000)
+            animation.setStartValue(0)
+            animation.setEndValue(1)
+            animation.setEasingCurve(QEasingCurve.OutExpo)
+            self.recover_animation.addAnimation(animation)
+        for edge in self.edge_map.keys():
+            # if not self.edge_map[edge].isVisible():
+            animation = QPropertyAnimation(self.edge_map[edge], b"opacity")
+            animation.setDuration(1000)
+            animation.setStartValue(0)
+            animation.setEndValue(1)
+            animation.setEasingCurve(QEasingCurve.OutExpo)
+            self.recover_animation.addAnimation(animation)
+        return self.recover_animation
 
     def _load_critical_path(self):
 
