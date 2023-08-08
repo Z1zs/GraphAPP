@@ -105,7 +105,7 @@ class Graph:
     def remove_edge(self, start_vertex_name, end_vertex_name):
         start_vertex = Vertex(str(start_vertex_name))
         end_vertex = Vertex(str(end_vertex_name))
-        if not self.has_edge(start_vertex_name,end_vertex_name):
+        if not self.has_edge(start_vertex_name, end_vertex_name):
             return False
         if start_vertex in self.adj_list:
             self.adj_list[start_vertex] = [edge for edge in self.adj_list[start_vertex]
@@ -178,7 +178,7 @@ class Graph:
         else:
             return False
 
-    # 重载str函数
+    # 打印各顶点与边信息，方便debug
     def display(self):
         for v in self.adj_list.keys():
             print(str(v) + "  :")

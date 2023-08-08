@@ -4,7 +4,7 @@ import numpy as np
 from graph import Graph, Vertex, Edge
 from typing import Dict
 from PyQt5.QtCore import (QEasingCurve, QLineF,
-                          QParallelAnimationGroup, QPointF,
+                          QParallelAnimationGroup, QPointF,QSequentialAnimationGroup,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
 from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
@@ -18,11 +18,14 @@ class NodeItem(QGraphicsObject):
 
     def __init__(self, name: str, data: Dict[str, int] = None, parent=None):
         super().__init__(parent)
+        # 数据成员
         self._name = name
         self._edges = []
+        # 图形参数
         self._color = QColor("green").darker()
         self._radius = 30
         self._rect = QRectF(0, 0, self._radius * 2, self._radius * 2)
+        # UI参数
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
@@ -38,55 +41,24 @@ class NodeItem(QGraphicsObject):
             self.setToolTip("Name: " + self._name)
 
     def boundingRect(self) -> QRectF:
-        """Override from QGraphicsItem
-
-        Returns:
-            QRect: Return node bounding rect
-        """
+        # 返回矩形边框坐标
         return self._rect
 
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget = None):
-        """Override from QGraphicsItem
-
-        Draw node
-
-        Args:
-            painter (QPainter)
-            option (QStyleOptionGraphicsItem)
-        """
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, _widget: QWidget = None):
+        # paint方法实现组件绘制
         painter.setRenderHints(QPainter.Antialiasing)
-        painter.setPen(
-            QPen(
-                self._color,
-                2,
-                Qt.SolidLine,
-                Qt.RoundCap,
-                Qt.RoundJoin,
-            )
-        )
+        painter.setPen(QPen(self._color, 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         painter.setBrush(QBrush(self._color))
         painter.drawEllipse(self.boundingRect())
         painter.setPen(QPen(QColor("white")))
         painter.drawText(self.boundingRect(), Qt.AlignCenter, self._name)
 
     def add_edge(self, edge):
-        """Add an edge to this node
-
-        Args:
-            edge (EdgeItem)
-        """
+        # 添加边
         self._edges.append(edge)
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
-        """Override from QGraphicsItem
-
-        Args:
-            change (QGraphicsItem.GraphicsItemChange)
-            value (Any)
-
-        Returns:
-            Any
-        """
+        # 调整结点及邻边位置
         if change == QGraphicsItem.ItemPositionHasChanged:
             for edge in self._edges:
                 edge.adjust()
@@ -97,12 +69,7 @@ class NodeItem(QGraphicsObject):
 class EdgeItem(QGraphicsObject):
     def __init__(self, source: NodeItem, dest: NodeItem, data: Dict[str, int] = None, color: QColor = QColor("green"),
                  parent: QGraphicsItem = None):
-        """Edge constructor
-
-        Args:
-            source (NodeItem): source node
-            dest (NodeItem): destination node
-        """
+        # 数据成员
         super().__init__(parent)
         self._source = source
         self._dest = dest
@@ -126,20 +93,15 @@ class EdgeItem(QGraphicsObject):
         self._tickness = 2
         self._color = color
         self._arrow_size = 20
-
-        self._source.add_edge(self)
-        self._dest.add_edge(self)
-
         self._line = QLineF()
         self.setZValue(-1)
+        # 结点添加对应边
+        self._source.add_edge(self)
+        self._dest.add_edge(self)
         self.adjust()
 
     def boundingRect(self) -> QRectF:
-        """Override from QGraphicsItem
-
-        Returns:
-            QRect: Return node bounding rect
-        """
+        # 返回矩形边框坐标
         return (
             QRectF(self._line.p1(), self._line.p2())
             .normalized()
@@ -152,10 +114,7 @@ class EdgeItem(QGraphicsObject):
         )
 
     def adjust(self):
-        """
-        Update edge position from source and destination node.
-        This method is called from Node::itemChange
-        """
+        # 拖拽调整
         self.prepareGeometryChange()
         self._line = QLineF(
             self._source.pos() + self._source.boundingRect().center(),
@@ -163,17 +122,11 @@ class EdgeItem(QGraphicsObject):
         )
 
     def _draw_arrow(self, painter: QPainter, start: QPointF, end: QPointF):
-        """Draw arrow from start point to end point.
-
-        Args:
-            painter (QPainter)
-            start (QPointF): start position
-            end (QPointF): end position
-        """
+        # 画箭头，允许倾斜
         painter.setBrush(QBrush(self._color))
-
+        # 箭头所在线段
         line = QLineF(end, start)
-
+        # 计算倾斜角度
         angle = math.atan2(-line.dy(), line.dx())
         arrow_p1 = line.p1() + QPointF(
             math.sin(angle + math.pi / 3) * self._arrow_size,
@@ -183,21 +136,18 @@ class EdgeItem(QGraphicsObject):
             math.sin(angle + math.pi - math.pi / 3) * self._arrow_size,
             math.cos(angle + math.pi - math.pi / 3) * self._arrow_size,
         )
-
+        # 箭头三角部分
         arrow_head = QPolygonF()
         arrow_head.clear()
         arrow_head.append(line.p1())
         arrow_head.append(arrow_p1)
         arrow_head.append(arrow_p2)
+        # 箭身
         painter.drawLine(line)
         painter.drawPolygon(arrow_head)
 
     def _arrow_target(self) -> QPointF:
-        """Calculate the position of the arrow taking into account the size of the destination node
-
-        Returns:
-            QPointF
-        """
+        # 计算箭头坐标，考虑终点node尺寸
         target = self._line.p1()
         center = self._line.p2()
         radius = self._dest._radius
@@ -210,84 +160,60 @@ class EdgeItem(QGraphicsObject):
 
         return target
 
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
-        """Override from QGraphicsItem
-
-        Draw Edge. This method is called from Edge.adjust()
-
-        Args:
-            painter (QPainter)
-            option (QStyleOptionGraphicsItem)
-        """
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, _widget=None):
+        # 绘图函数
 
         if self._source and self._dest:
             painter.setRenderHints(QPainter.Antialiasing)
-
-            painter.setPen(
-                QPen(
-                    QColor(self._color),
-                    self._tickness / 2
-                )
-            )
+            # 权重
+            painter.setPen(QPen(QColor(self._color), self._tickness / 2))
             painter.drawText(self.boundingRect(), Qt.AlignCenter, str(self._weight))
-
-            painter.setPen(
-                QPen(
-                    QColor(self._color),
-                    self._tickness,
-                    Qt.SolidLine,
-                    Qt.RoundCap,
-                    Qt.RoundJoin,
-                )
-            )
+            # 箭头
+            painter.setPen(QPen(QColor(self._color), self._tickness, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
             painter.drawLine(self._line)
             self._draw_arrow(painter, self._line.p1(), self._arrow_target())
 
 
 class GraphView(QGraphicsView):
-    def __init__(self, graph: Graph, show_cpath=False, parent=None):
-        """GraphView constructor
-
-        This widget can display a directed graph
-
-        Args:
-            graph (nx.DiGraph): a networkx directed graph
-        """
+    def __init__(self, _graph: Graph, show_cpath=False):
+        # 数据成员及画板
         super().__init__()
-        self._graph = graph
+        self._graph = _graph
         self._scene = QGraphicsScene()
         self.setScene(self._scene)
 
-        # Used to add space between nodes
+        # 图形参数
         self._graph_xscale = 10
         self._graph_yscale = 20
 
-        # Map node/edge name to Node/Edge object {str=>Node}
+        # 从node/edge到item的map
         self._nodes_map = {}
         self.edge_map = {}
+        # 从node/edge到对应动画，topo排序用
         self.hidden_animation_map = {}
-
+        # 是否显示关键路径
         if show_cpath is False:
             self._load_graph()
         else:
             self.cpath, self.vedict, self.vldict, self.edict, self.ldict, self.ddict = CriticalPath(self._graph)
             self._load_critical_path()
+        # 布局
         self.set_layout()
 
     def spring_layout(self):
-        isTopo, TPlist = TopologicalSort(self._graph)
+        (is_topo, tplist) = TopologicalSort(self._graph)
         # 非拓扑序列补齐
-        if isTopo is False:
+        if is_topo is False:
             for nd in self._graph.get_vertices():
-                if nd not in TPlist:
-                    TPlist.append(nd)
+                if nd not in tplist:
+                    tplist.append(nd)
 
         # 返回坐标值
         pos_dict = {}
-        for i in range(len(TPlist)):
+        for i in range(len(tplist)):
             x = (i + 1) * 10 + np.random.randn()
             y = np.random.randn() * 10
-            pos_dict[TPlist[i]] = [x, y]
+            pos_dict[tplist[i]] = [x, y]
         return pos_dict
 
     def add_node(self, node: Vertex):
@@ -297,12 +223,12 @@ class GraphView(QGraphicsView):
         self.scene().addItem(item)
         self._nodes_map[node] = item
         # 调整坐标
-        x= (len(self._graph.get_vertices()) + 1) * 10 + np.random.randn()
+        x = (len(self._graph.get_vertices()) + 1) * 10 + np.random.randn()
         y = np.random.randn() * 10
         x *= self._graph_xscale
         y *= self._graph_yscale
         item = self._nodes_map[node]
-
+        # 动画显示
         self.add_animation = QPropertyAnimation(item, b"pos")
         self.add_animation.setDuration(1000)
         self.add_animation.setEndValue(QPointF(x, y))
@@ -310,23 +236,28 @@ class GraphView(QGraphicsView):
         self.add_animation.start()
 
     def remove_node(self, node: Vertex):
+        # 不推荐使用，代价较高
+        # 删除结点
         if node in self._nodes_map:
             item = self._nodes_map[node]
             self._nodes_map.pop(node)
             self.scene().removeItem(item)
+        # 删除边
         for edge in self.edge_map.keys():
-            if edge.end_vertex==node or edge.start_vertex==node:
+            if edge.end_vertex == node or edge.start_vertex == node:
                 item = self.edge_map[edge]
                 self._nodes_map.pop(edge)
                 self.scene().removeItem(item)
 
     def remove_edge(self, edge: Edge):
+        # 删除边
         if edge in self.edge_map:
             item = self.edge_map[edge]
             self.edge_map.pop(edge)
             self.scene().removeItem(item)
 
     def add_edge(self, edge: Edge):
+        # 添加边
         source = self._nodes_map[edge.start_vertex]
         dest = self._nodes_map[edge.end_vertex]
 
@@ -336,9 +267,9 @@ class GraphView(QGraphicsView):
         self.scene().addItem(edge_item)
 
     def set_layout(self):
-        # Compute node position from layout function
+        # 获取各节点位置
         positions = self.spring_layout()
-        # Change position of all nodes using an animation
+        # 动画调整位置
         self.locate_animations = QParallelAnimationGroup()
         for node, pos in positions.items():
             x, y = pos
@@ -355,11 +286,11 @@ class GraphView(QGraphicsView):
         self.locate_animations.start()
 
     def _load_graph(self):
-
+        # 初始化
         self.scene().clear()
         self._nodes_map.clear()
 
-        # Add nodes
+        # 添加节点
         for node in self._graph.adj_list.keys():
             data = {"showif": 0}
             item = NodeItem(node.name, data)
@@ -367,7 +298,7 @@ class GraphView(QGraphicsView):
             self._nodes_map[node] = item
 
         for node in self._graph.adj_list.keys():
-            # Add edges
+            # 添加边
             for edge in self._graph.adj_list[node]:
                 source = self._nodes_map[edge.start_vertex]
                 dest = self._nodes_map[edge.end_vertex]
@@ -379,7 +310,7 @@ class GraphView(QGraphicsView):
 
     def hidden_node_animation(self, node):
         hidden_anime = QParallelAnimationGroup()
-        # 动画
+        # 节点消失动画
         animation = QPropertyAnimation(self._nodes_map[node], b"opacity")
         animation.setDuration(1000)
         animation.setStartValue(1)
@@ -387,7 +318,7 @@ class GraphView(QGraphicsView):
         animation.setEasingCurve(QEasingCurve.OutExpo)
         hidden_anime.addAnimation(animation)
 
-        # Add edges
+        # 出边消失动画
         for edge in self._graph.adj_list[node]:
             animation = QPropertyAnimation(self.edge_map[edge], b"opacity")
             animation.setDuration(1000)
@@ -401,7 +332,7 @@ class GraphView(QGraphicsView):
     def recover_all_animation(self):
         self.recover_animation = QParallelAnimationGroup()
         for node in self._nodes_map.keys():
-            # if not self._nodes_map[node].isVisible():
+            # 各节点重现动画
             animation = QPropertyAnimation(self._nodes_map[node], b"opacity")
             animation.setDuration(1000)
             animation.setStartValue(0)
@@ -409,7 +340,7 @@ class GraphView(QGraphicsView):
             animation.setEasingCurve(QEasingCurve.OutExpo)
             self.recover_animation.addAnimation(animation)
         for edge in self.edge_map.keys():
-            # if not self.edge_map[edge].isVisible():
+            # 各边重现动画
             animation = QPropertyAnimation(self.edge_map[edge], b"opacity")
             animation.setDuration(1000)
             animation.setStartValue(0)
@@ -419,25 +350,25 @@ class GraphView(QGraphicsView):
         return self.recover_animation
 
     def _load_critical_path(self):
-
+        # 初始化
         self.scene().clear()
         self._nodes_map.clear()
 
-        # Add nodes
+        # 添加顶点
         for node in self._graph.adj_list.keys():
             data = {"showif": 0, "vevalue": self.vedict[node], "vlvalue": self.vldict[node]}
             item = NodeItem(node.name, data)
             self.scene().addItem(item)
             self._nodes_map[node] = item
         for node in self._graph.adj_list.keys():
-            # Add edges
+            # 添加边
             for edge in self._graph.adj_list[node]:
                 source = self._nodes_map[edge.start_vertex]
                 dest = self._nodes_map[edge.end_vertex]
 
                 data = {"showif": 1, "weight": edge.weight, "evalue": self.edict[edge], "lvalue": self.ldict[edge],
                         "dvalue": self.ddict[edge]}
-                item = None
+                # 标注关键路径，用cyan区分颜色
                 if edge in self.cpath:
                     item = EdgeItem(source, dest, data, QColor("cyan"))
                 else:
@@ -447,10 +378,10 @@ class GraphView(QGraphicsView):
 
 
 class MainWindow(QWidget):
-    def __init__(self, graph):
+    def __init__(self, _graph):
         super().__init__()
 
-        self.graph = graph
+        self.graph = _graph
         self.view = GraphView(self.graph, True)
         v_layout = QVBoxLayout(self)
         v_layout.addWidget(self.view)

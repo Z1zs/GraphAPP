@@ -3,48 +3,58 @@ from typing import List, Dict
 import copy
 
 
-def TopologicalSort(graph: Graph):
-    tmp_graph = copy.deepcopy(graph)
+# 拓扑排序
+def TopologicalSort(_graph: Graph):
+    # 需要不断删除结点，故需要深拷贝
+    tmp_graph = copy.deepcopy(_graph)
     vertex_list = []
-    isDAG = False
+    isdag = False
+
     while tmp_graph.in_degree_dict != {}:
-        isDAG = False
+        # 依次删除入度为0的点
+        isdag = False
         for vertex in tmp_graph.in_degree_dict.keys():
             if tmp_graph.in_degree_dict[vertex] == 0:
-                isDAG = True
+                isdag = True
                 vertex_list.append(vertex)
                 tmp_graph.remove_vertex(vertex)
                 break
-        if isDAG is False:
+        # 找不到入度为0的点，非有向无环图
+        if isdag is False:
             print("Error: The graph is NOT a DAG!")
-            return isDAG, vertex_list
-    return isDAG, vertex_list
+            return isdag, vertex_list
+    return isdag, vertex_list
 
 
-def AntiTopologicalSort(graph: Graph):
-    tmp_graph = copy.deepcopy(graph)
+# 逆拓扑排序
+def AntiTopologicalSort(_graph: Graph):
+    tmp_graph = copy.deepcopy(_graph)
     vertex_list = []
-    isDAG = False
+    isdag = False
     while tmp_graph.adj_list != {}:
-        isDAG = False
+        # 依次删除出度为0的点
+        isdag = False
         for vertex in tmp_graph.adj_list.keys():
             if len(tmp_graph.adj_list[vertex]) == 0:
-                isDAG = True
+                isdag = True
                 vertex_list.append(vertex)
                 tmp_graph.remove_vertex(vertex)
                 break
-        if isDAG is False:
+        # 找不到出度为0的点，非有向无环图
+        if isdag is False:
             print("Error: The graph is NOT a DAG!")
-            return isDAG, vertex_list
-    return isDAG, vertex_list
+            return isdag, vertex_list
+    return isdag, vertex_list
 
 
-def VEPath(graph: Graph, tplist: List[Vertex]):
-    predecessor_dict = graph.get_predecessor()
-    # print(predecessor_dict)
+# 求ve
+def VEPath(_graph: Graph, tplist: List[Vertex]):
+    # 获得各顶点的前驱节点
+    predecessor_dict = _graph.get_predecessor()
     ve_dict = {}
+    # 按拓扑排序顺序
     for vertex in tplist:
-        if graph.in_degree_dict[vertex] == 0:
+        if _graph.in_degree_dict[vertex] == 0:
             ve_dict[vertex] = 0
         else:
             ve = 0
@@ -56,14 +66,17 @@ def VEPath(graph: Graph, tplist: List[Vertex]):
     return ve_dict
 
 
-def VLPath(graph: Graph, vedict: Dict[Vertex, int], atplist: List[Vertex]):
+# 求vl
+def VLPath(_graph: Graph, vedict: Dict[Vertex, int], atplist: List[Vertex]):
     vl_dict = {}
+    # 逆拓扑排序顺序
     for vertex in atplist:
-        if len(graph.adj_list[vertex]) == 0:
+        if len(_graph.adj_list[vertex]) == 0:
             vl_dict[vertex] = vedict[vertex]
         else:
             vl = 1e+10
-            for successor in graph.adj_list[vertex]:
+            # 需要用到后继节点，直接利用邻接链表即可
+            for successor in _graph.adj_list[vertex]:
                 # 所有后继节点的最小值
                 if vl > vl_dict[successor.end_vertex] - successor.weight:
                     vl = vl_dict[successor.end_vertex] - successor.weight
@@ -71,22 +84,25 @@ def VLPath(graph: Graph, vedict: Dict[Vertex, int], atplist: List[Vertex]):
     return vl_dict
 
 
-def EPath(graph: Graph, vedict: Dict[Vertex, int]):
+# 求e
+def EPath(_graph: Graph, vedict: Dict[Vertex, int]):
     edict = {}
-    for vertex in graph.adj_list.keys():
-        for edge in graph.adj_list[vertex]:
+    for vertex in _graph.adj_list.keys():
+        for edge in _graph.adj_list[vertex]:
             edict[edge] = vedict[vertex]
     return edict
 
 
-def LPath(graph: Graph, vldict: Dict[Vertex, int]):
+# 求l
+def LPath(_graph: Graph, vldict: Dict[Vertex, int]):
     ldict = {}
-    for vertex in graph.adj_list.keys():
-        for edge in graph.adj_list[vertex]:
+    for vertex in _graph.adj_list.keys():
+        for edge in _graph.adj_list[vertex]:
             ldict[edge] = vldict[edge.end_vertex] - edge.weight
     return ldict
 
 
+# 求l-e
 def DPath(edict: Dict[Edge, int], ldict: Dict[Edge, int]):
     ddict = {}
     for edge in edict.keys():
@@ -94,19 +110,42 @@ def DPath(edict: Dict[Edge, int], ldict: Dict[Edge, int]):
     return ddict
 
 
-def CriticalPath(graph: Graph):
+# 将关键路径拆分（即处理多条路径情况）
+
+def SplitPath(edge_list):
+    if len(edge_list) <= 1:
+        return edge_list
+    path_list = []
+    source = edge_list[0].start_vertex
+    dist = edge_list[-1].end_vertex
+
+    path_list.append(edge_list[0])
+    tmp = edge_list[0].end_vertex
+    while tmp != dist:
+        for edge in edge_list:
+            if edge.start_vertex == tmp:
+                path_list.append(edge)
+                tmp = edge.end_vertex
+    return path_list
+
+
+# 求关键路径
+def CriticalPath(_graph: Graph):
     # 得到拓扑排序和逆拓扑排序序列
-    isTopo, TPlist = TopologicalSort(graph)
-    _, ATPlist = AntiTopologicalSort(graph)
+    (is_topo, tplist) = TopologicalSort(_graph)
+    _, anti_tplist = AntiTopologicalSort(_graph)
+    if not is_topo:
+        print("Not TopoSortable!")
+        return False
     # 得ve和vl
-    vedict = VEPath(graph, TPlist)
-    vldict = VLPath(graph, vedict, ATPlist)
+    vedict = VEPath(_graph, tplist)
+    vldict = VLPath(_graph, vedict, anti_tplist)
     # 得e和l
-    edict = EPath(graph, vedict)
-    ldict = LPath(graph, vldict)
-
+    edict = EPath(_graph, vedict)
+    ldict = LPath(_graph, vldict)
+    # 求L-E
     ddict = DPath(edict, ldict)
-
+    # L-E==0的边即位于关键路径上
     critical_path = []  # 关键路径
     for edge in ddict.keys():
         if ddict[edge] == 0:
