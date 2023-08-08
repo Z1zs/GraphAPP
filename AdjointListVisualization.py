@@ -212,7 +212,7 @@ class AdjiontListView(QGraphicsView):
         # 初始化,topo_graph是私有成员,深拷贝(因为需要修改其他节点的入度出度等，不如直接调用Graph写好的remove方法
         self.scene().clear()
         self._nodes_map.clear()
-        self._topo_graph = copy.deepcopy(graph)
+        self._topo_graph = copy.deepcopy(self._graph)
 
         for node in self._graph.adj_list.keys():
             # 遍历顶点，得到相应的悬浮信息

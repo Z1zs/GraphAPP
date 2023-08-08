@@ -3,8 +3,8 @@ import sys
 import numpy as np
 from graph import Graph, Vertex, Edge
 from typing import Dict
-from PyQt5.QtCore import (QEasingCurve, QLineF,
-                          QParallelAnimationGroup, QPointF,QSequentialAnimationGroup,
+from PyQt5.QtCore import (QEasingCurve, QLineF, pyqtProperty,
+                          QParallelAnimationGroup, QPointF, QSequentialAnimationGroup,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
 from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
@@ -22,7 +22,7 @@ class NodeItem(QGraphicsObject):
         self._name = name
         self._edges = []
         # 图形参数
-        self._color = QColor("green").darker()
+        self._color = QColor("green")
         self._radius = 30
         self._rect = QRectF(0, 0, self._radius * 2, self._radius * 2)
         # UI参数
@@ -175,7 +175,7 @@ class EdgeItem(QGraphicsObject):
 
 
 class GraphView(QGraphicsView):
-    def __init__(self, _graph: Graph, show_cpath=False):
+    def __init__(self, _graph: Graph):
         # 数据成员及画板
         super().__init__()
         self._graph = _graph
@@ -191,16 +191,10 @@ class GraphView(QGraphicsView):
         self.edge_map = {}
         # 从node/edge到对应动画，topo排序用
         self.hidden_animation_map = {}
-        # 是否显示关键路径
-        if show_cpath is False:
-            self._load_graph()
-        else:
-            self.cpath, self.vedict, self.vldict, self.edict, self.ldict, self.ddict = CriticalPath(self._graph)
-            self._load_critical_path()
-        # 布局
-        self.set_layout()
+        # 载入组件
+        self._load_graph()
 
-    def spring_layout(self):
+    def topo_layout(self):
         (is_topo, tplist) = TopologicalSort(self._graph)
         # 非拓扑序列补齐
         if is_topo is False:
@@ -267,11 +261,11 @@ class GraphView(QGraphicsView):
         self.scene().addItem(edge_item)
 
     def set_layout(self):
-        # 获取各节点位置
-        positions = self.spring_layout()
+        # 计算各节点坐标
+        self.positions = self.topo_layout()
         # 动画调整位置
         self.locate_animations = QParallelAnimationGroup()
-        for node, pos in positions.items():
+        for node, pos in self.positions.items():
             x, y = pos
             x *= self._graph_xscale
             y *= self._graph_yscale
@@ -307,6 +301,7 @@ class GraphView(QGraphicsView):
                 edge_item = EdgeItem(source, dest, data)
                 self.edge_map[edge] = edge_item
                 self.scene().addItem(edge_item)
+        self.set_layout()
 
     def hidden_node_animation(self, node):
         hidden_anime = QParallelAnimationGroup()
@@ -353,7 +348,7 @@ class GraphView(QGraphicsView):
         # 初始化
         self.scene().clear()
         self._nodes_map.clear()
-
+        self.cpath, self.vedict, self.vldict, self.edict, self.ldict, self.ddict = CriticalPath(self._graph)
         # 添加顶点
         for node in self._graph.adj_list.keys():
             data = {"showif": 0, "vevalue": self.vedict[node], "vlvalue": self.vldict[node]}
@@ -375,6 +370,8 @@ class GraphView(QGraphicsView):
                     item = EdgeItem(source, dest, data)
                 self.scene().addItem(item)
                 self.edge_map[edge] = item
+        self.set_layout()
+
 
 
 class MainWindow(QWidget):
@@ -382,7 +379,7 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.graph = _graph
-        self.view = GraphView(self.graph, True)
+        self.view = GraphView(self.graph)
         v_layout = QVBoxLayout(self)
         v_layout.addWidget(self.view)
 

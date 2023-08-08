@@ -25,7 +25,8 @@ class SortColumn(QGraphicsView):
         self._radius = 30
         self.space_size = 10
         # 加载成员
-        self.load_node()
+        if len(node_list) > 0:
+            self.load_node()
 
     def load_node(self):
         self._scene.clear()
@@ -65,7 +66,7 @@ class SortColumn(QGraphicsView):
 
         add_anime = QParallelAnimationGroup()
         # 位置动画
-        x = (len(self.topo_list)-1) * (self._radius * 2 + self.space_size)
+        x = (len(self.topo_list) - 1) * (self._radius * 2 + self.space_size)
         y = 0
         add_anime1 = QPropertyAnimation(self._nodes_map[node], b"pos")
         add_anime1.setDuration(1000)
@@ -82,6 +83,17 @@ class SortColumn(QGraphicsView):
         self.add_animation_map[node] = add_anime
         return self.add_animation_map[node]
 
+    def myupdate(self,new_node_list):
+        self.myclear()
+        self.node_list = new_node_list
+        self.topo_list = []
+        self._nodes_map = {}
+        self.add_animation_map = {}
+        # 加载成员
+        if len(new_node_list) > 0:
+            self.load_node()
+
+
 
 class PathColumn(QGraphicsView):
     def __init__(self, edge_list):
@@ -96,7 +108,8 @@ class PathColumn(QGraphicsView):
         self._radius = 30
         self.space_size = 20
         # 加载路径
-        self.load_path()
+        if len(edge_list) > 0:
+            self.load_path()
 
     def load_path(self):
         self.locate_animation = QParallelAnimationGroup()
@@ -110,7 +123,7 @@ class PathColumn(QGraphicsView):
                 self.scene().addItem(item)
                 self._nodes_map[node] = item
             # 位置动画
-            x = len(self._nodes_map.keys()) * (self._radius * 3 + self.space_size)
+            x = (len(self._nodes_map.keys()) - 1) * (self._radius * 3 + self.space_size)
             y = 0
             anime = QPropertyAnimation(self._nodes_map[node], b"pos")
             anime.setDuration(1000)
@@ -125,7 +138,7 @@ class PathColumn(QGraphicsView):
         self.scene().addItem(item)
         self._nodes_map[node] = item
         # 位置动画
-        x = len(self._nodes_map.keys()) * (self._radius * 3 + self.space_size)
+        x = (len(self._nodes_map.keys()) - 1) * (self._radius * 3 + self.space_size)
         y = 0
         anime = QPropertyAnimation(self._nodes_map[node], b"pos")
         anime.setDuration(1000)
@@ -141,6 +154,20 @@ class PathColumn(QGraphicsView):
             self._edges_map[edge] = edge_item
             self.scene().addItem(edge_item)
         self.locate_animation.start()
+
+    def myclear(self):
+        self._scene.clear()
+        self._edges_map.clear()
+        self._nodes_map.clear()
+
+    def myupdate(self,new_edge_list):
+        self.myclear()
+        self.path = SplitPath(new_edge_list)
+        self._nodes_map = {}
+        self._edges_map = {}
+        # 加载路径
+        if len(new_edge_list) > 0:
+            self.load_path()
 
 
 class MainWindow(QWidget):
