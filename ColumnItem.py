@@ -35,7 +35,6 @@ class SortColumn(QGraphicsView):
         self.locate_animation = QParallelAnimationGroup()
         for i in range(len(self.node_list)):
             node = self.node_list[i]
-            print(node)
             data = {"showif": 0}
             item = NodeItem(node.name, data)
             item.setFlag(QGraphicsItem.ItemIsMovable, False)

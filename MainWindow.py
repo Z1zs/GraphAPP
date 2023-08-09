@@ -1,6 +1,6 @@
 import sys
 from graph import Graph, Vertex, Edge
-from PyQt5.QtCore import (QSequentialAnimationGroup, QParallelAnimationGroup)
+from PyQt5.QtCore import (QSequentialAnimationGroup, QParallelAnimationGroup, QState, QAbstractAnimation)
 from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QDialogButtonBox, QDialog, QLabel, QLineEdit, QVBoxLayout,
                              QWidget, QHBoxLayout, QMessageBox, QMainWindow, QAction)
 from AdjointListVisualization import AdjiontListView
@@ -206,10 +206,13 @@ class AddEdgeDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self, _graph: Graph):
         super(MainWindow, self).__init__()
-        self.setWindowTitle("My Awesome App")
+        self.setWindowTitle("Graph APP")
 
         self._graph = _graph
+        # 动画运行中不能被干扰
         self.topo_animation_map = {}
+        self.anime_running_flag = False
+        # 添加组件
         self.list_label = QLabel("The adjoint list of graph:")
         self.adjoint_widget = AdjiontListView(self._graph)
         self.network_label = QLabel("The network view of graph:")
@@ -313,7 +316,7 @@ class MainWindow(QMainWindow):
         #  拓扑排序子菜单  #
         show_topo_menu = show_menu.addMenu("Topo Sort")
         #   播放拓扑排序动画   #
-        play_topo_animation_action = QAction("Play", self)
+        play_topo_animation_action = QAction("Play/Pause", self)
         play_topo_animation_action.setStatusTip("Play Topo Sort Animation")
         play_topo_animation_action.triggered.connect(self.topo_sort)
         show_topo_menu.addAction(play_topo_animation_action)
@@ -377,6 +380,11 @@ class MainWindow(QMainWindow):
         help_menu.addAction(show_layout_action)
 
     def run_add_node_dialog(self):
+        if self.topo_animation_map != {}:
+            if self.topo_animation.state() == QAbstractAnimation.Running:
+                self.topo_animation.stop()
+                self.recover_all()
+                self._update_dialog()
         self.add_node_dlg = AddNodeDialog(self)
         self.add_node_dlg.exec()
 
@@ -385,6 +393,11 @@ class MainWindow(QMainWindow):
         self.adjoint_widget.add_node(node)
 
     def run_add_edge_dialog(self):
+        if self.topo_animation_map != {}:
+            if self.topo_animation.state() == QAbstractAnimation.Running:
+                self.topo_animation.stop()
+                self.recover_all()
+                self._update_dialog()
         self.add_edge_dlg = AddEdgeDialog(self)
         self.add_edge_dlg.exec()
 
@@ -393,6 +406,11 @@ class MainWindow(QMainWindow):
         self.adjoint_widget.add_edge(edge)
 
     def run_delete_node_dialog(self):
+        if self.topo_animation_map != {}:
+            if self.topo_animation.state() == QAbstractAnimation.Running:
+                self.topo_animation.stop()
+                self.recover_all()
+                self._update_dialog()
         self.del_node_dlg = DeleteNodeDialog(self)
         self.del_node_dlg.exec()
 
@@ -401,6 +419,11 @@ class MainWindow(QMainWindow):
         self.adjoint_widget.remove_node(node)  # 无需调用参数，直接更新
 
     def run_delete_edge_dialog(self):
+        if self.topo_animation_map != {}:
+            if self.topo_animation.state() == QAbstractAnimation.Running:
+                self.topo_animation.stop()
+                self.recover_all()
+                self._update_dialog()
         self.del_edge_dlg = DeleteEdgeDialog(self)
         self.del_edge_dlg.exec()
 
@@ -408,7 +431,7 @@ class MainWindow(QMainWindow):
         self.graph_widget.remove_edge(edge)
         self.adjoint_widget.remove_edge(edge)  # 无需调用参数，直接更新
 
-    def topo_sort(self):
+    def load_topo_animation(self):
         self.topo_animation_map = {}
         # 先检查连通性和是否有环
         if not self._update_dialog():
@@ -429,14 +452,33 @@ class MainWindow(QMainWindow):
         self.topo_animation = QSequentialAnimationGroup()
         for node in self.sort_node_list:
             self.topo_animation.addAnimation(self.topo_animation_map[node])
-        self.topo_animation.start()
+
+    def topo_sort(self):
+        self.load_topo_animation()
+        if self.topo_animation.state() == QAbstractAnimation.Stopped:
+            self.topo_animation.start()
+            return QAbstractAnimation.Running
+        if self.topo_animation.state() == QAbstractAnimation.Paused:
+            self.topo_animation.resume()
+            return QAbstractAnimation.Running
+        if self.topo_animation.state() == QAbstractAnimation.Running:
+            self.topo_animation.pause()
+            return QAbstractAnimation.Paused
 
     def recover_all(self):
+        if self.topo_animation.state() == QAbstractAnimation.Running:
+            self.topo_animation.stop()
+            self._update_dialog()
         self.adjoint_widget.recover_all_animation()
         anime = self.graph_widget.recover_all_animation()
         anime.start()
 
     def show_critical_path(self):
+        if self.topo_animation_map != {}:
+            if self.topo_animation.state() == QAbstractAnimation.Running:
+                self.topo_animation.stop()
+                self.recover_all()
+                self._update_dialog()
         self.show_critical_path_flag = ~self.show_critical_path_flag
         if self.show_critical_path_flag:
             self.graph_widget._load_critical_path()
@@ -444,6 +486,10 @@ class MainWindow(QMainWindow):
             self.graph_widget._load_graph()
 
     def _update_dialog(self):
+        if self.topo_animation_map != {}:
+            if self.topo_animation.state() == QAbstractAnimation.Running:
+                self.topo_animation.stop()
+                self.recover_all()
         # 空值处理
         if len(self._graph.get_vertices()) == 0:
             WrongDialog = QMessageBox(self)
