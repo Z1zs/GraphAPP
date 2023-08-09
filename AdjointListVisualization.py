@@ -157,7 +157,6 @@ class AdjiontListView(QGraphicsView):
         animation.setEasingCurve(QEasingCurve.OutExpo)
         self.hidden_anime.addAnimation(animation)
         # 隐去边
-        print(self._graph.adj_list.keys())
         for edge in self._graph.adj_list[node]:
             animation = QPropertyAnimation(self.edge_map[edge], b"opacity")
             animation.setDuration(1000)
@@ -177,36 +176,8 @@ class AdjiontListView(QGraphicsView):
     # 调用之后必须执行，因为各ElementItem已经复原
     def recover_all_animation(self):
         # 还原所有组件的初始值
-        self.recover_animation = QParallelAnimationGroup()
-        for node in self._graph.adj_list.keys():
-            if node not in self._topo_graph.adj_list.keys():
-                # 复现动画
-                animation = QPropertyAnimation(self._nodes_map[node], b"opacity")
-                animation.setDuration(1000)
-                animation.setEndValue(1)
-                animation.setEasingCurve(QEasingCurve.OutExpo)
-                self.recover_animation.addAnimation(animation)
-                # 对应入度
-                animation = QPropertyAnimation(self._nodes_map[node], b"mydegree")
-                animation.setDuration(1000)
-                animation.setEndValue(str(self._graph.in_degree_dict[node]))
-                animation.setEasingCurve(QEasingCurve.OutExpo)
-                self.recover_animation.addAnimation(animation)
-                for edge in self._graph.adj_list[node]:
-                    # 复现动画
-                    animation = QPropertyAnimation(self.edge_map[edge], b"opacity")
-                    animation.setDuration(1000)
-                    animation.setEndValue(1)
-                    animation.setEasingCurve(QEasingCurve.OutExpo)
-                    self.recover_animation.addAnimation(animation)
-            else:
-                # 修改入度
-                animation = QPropertyAnimation(self._nodes_map[node], b"mydegree")
-                animation.setDuration(1000)
-                animation.setEndValue(str(self._graph.in_degree_dict[node]))
-                animation.setEasingCurve(QEasingCurve.OutExpo)
-                self.recover_animation.addAnimation(animation)
-        return self.recover_animation
+        self._load_graph()
+        self.set_layout()
 
     def _load_graph(self):
         # 初始化,topo_graph是私有成员,深拷贝(因为需要修改其他节点的入度出度等，不如直接调用Graph写好的remove方法

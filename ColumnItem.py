@@ -70,6 +70,7 @@ class SortColumn(QGraphicsView):
         y = 0
         add_anime1 = QPropertyAnimation(self._nodes_map[node], b"pos")
         add_anime1.setDuration(1000)
+        add_anime1.setEndValue(QPointF(0, 0))
         add_anime1.setEndValue(QPointF(x, y))
         add_anime1.setEasingCurve(QEasingCurve.OutExpo)
         add_anime.addAnimation(add_anime1)
@@ -83,7 +84,7 @@ class SortColumn(QGraphicsView):
         self.add_animation_map[node] = add_anime
         return self.add_animation_map[node]
 
-    def myupdate(self,new_node_list):
+    def myupdate(self, new_node_list):
         self.myclear()
         self.node_list = new_node_list
         self.topo_list = []
@@ -92,7 +93,6 @@ class SortColumn(QGraphicsView):
         # 加载成员
         if len(new_node_list) > 0:
             self.load_node()
-
 
 
 class PathColumn(QGraphicsView):
@@ -160,7 +160,7 @@ class PathColumn(QGraphicsView):
         self._edges_map.clear()
         self._nodes_map.clear()
 
-    def myupdate(self,new_edge_list):
+    def myupdate(self, new_edge_list):
         self.myclear()
         self.path = SplitPath(new_edge_list)
         self._nodes_map = {}

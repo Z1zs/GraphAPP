@@ -116,7 +116,6 @@ def SplitPath(edge_list):
     if len(edge_list) <= 1:
         return edge_list
     path_list = []
-    source = edge_list[0].start_vertex
     dist = edge_list[-1].end_vertex
 
     path_list.append(edge_list[0])
@@ -149,10 +148,67 @@ def CriticalPath(_graph: Graph):
     critical_path = []  # 关键路径
     for edge in ddict.keys():
         if ddict[edge] == 0:
-            print(edge)
             critical_path.append(edge)
 
     return critical_path, vedict, vldict, edict, ldict, ddict
+
+
+# 并查集，用于检测连通分量
+class DSU:
+    def __init__(self, lt):
+        self.root = {}
+        for i in lt:
+            self.root[i] = i
+
+    def find(self, k):
+        if self.root[k] == k:
+            return k
+        self.root[k] = self.find(self.root[k])
+        return self.root[k]
+
+    def union(self, a, b):
+        x = self.find(a)
+        y = self.find(b)
+        if x != y:
+            self.root[y] = x
+        return
+
+
+def CheckConnectivity(_graph: Graph):
+    visited = {}
+    tmp_graph = copy.deepcopy(_graph)
+    # 并查集初始化
+    lt = list(tmp_graph.get_vertices())
+    dsu = DSU(lt)
+    for i in lt:
+        visited[i] = False
+    visited[lt[0]] = True
+    for node in tmp_graph.adj_list.keys():
+        for edge in tmp_graph.adj_list[node]:
+            if visited[edge.start_vertex] is True and visited[edge.end_vertex] is True:
+                dsu.union(edge.start_vertex, edge.end_vertex)
+                continue
+            if visited[edge.start_vertex] is True and visited[edge.end_vertex] is False:
+                dsu.root[edge.end_vertex] = dsu.find(edge.start_vertex)
+                visited[edge.end_vertex] = True
+                continue
+            if visited[edge.end_vertex] is True and visited[edge.start_vertex] is False:
+                dsu.root[edge.start_vertex] = dsu.find(edge.end_vertex)
+                visited[edge.start_vertex] = True
+                continue
+            if visited[edge.end_vertex] is False and visited[edge.start_vertex] is False:
+                dsu.union(edge.start_vertex, edge.end_vertex)
+                visited[edge.end_vertex] = True
+                visited[edge.start_vertex] = True
+                continue
+    # 合并并查集，只保留一个根节点
+    for node in lt:
+        dsu.root[node] = dsu.find(node)
+    roots = set(dsu.root.values())
+    if len(roots) == 1:
+        return True
+    else:
+        return False
 
 
 if __name__ == "__main__":
@@ -178,3 +234,6 @@ if __name__ == "__main__":
     graph.add_edge("v6", "v8", 4)
     graph.add_edge("v7", "v9", 2)
     graph.add_edge("v8", "v9", 4)
+
+    graph.remove_vertex("v1")
+    CheckConnectivity(graph)

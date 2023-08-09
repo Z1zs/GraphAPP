@@ -50,36 +50,42 @@ class Graph:
     # 添加独立顶点
     def add_vertex(self, vertex_name):
         vertex = Vertex(str(vertex_name))
+        wronginfo = ""
         if vertex not in self.adj_list:
             self.adj_list[vertex] = []
             self.in_degree_dict[vertex] = 0
         else:
+            wronginfo = "Error: Vertex " + vertex.name + " already exists."
             print("Error: Vertex %s already exists." % vertex.name)
-            return False
-        return True
+            return False, wronginfo
+        return True, wronginfo
 
     # 添加边
-    def add_edge(self, start_vertex_name, end_vertex_name, weight):
+    def add_edge(self, start_vertex_name: str, end_vertex_name: str, weight: float):
         start_vertex = Vertex(str(start_vertex_name))
         end_vertex = Vertex(str(end_vertex_name))
-
+        wronginfo = ""
         if weight <= 0:
+            wronginfo = "Error: Weight must be positive!"
             print("Error: Weight must be positive!")
-            return False
+            return False, wronginfo
         if start_vertex in self.adj_list:
             if end_vertex not in self.adj_list:
+                wronginfo = "Error: Can't find end_vertex " + end_vertex.name
                 print("Error: Can't find end_vertex %s" % end_vertex.name)
-                return False
+                return False, wronginfo
             elif self.has_edge(start_vertex, end_vertex):
+                wronginfo = "Error: Edge already exist!"
                 print("Error: Edge already exist!")
-                return False
+                return False, wronginfo
             edge = Edge(start_vertex, end_vertex, weight)
             self.in_degree_dict[end_vertex] = self.in_degree_dict[end_vertex] + 1
             self.adj_list[start_vertex].append(edge)
         else:
+            wronginfo = "Error: Can't find end_vertex " + start_vertex.name
             print("Error: Can't find end_vertex %s" % start_vertex.name)
-            return False
-        return True
+            return False, wronginfo
+        return True, wronginfo
 
     # 删除顶点
     def remove_vertex(self, vertex_name):
@@ -97,21 +103,25 @@ class Graph:
             for adj_vertices in self.adj_list.values():
                 adj_vertices[:] = [edge for edge in adj_vertices if edge.end_vertex.name != vertex.name]
         else:
+            wronginfo = "Error: Can't find vertex " + vertex.name
             print("Error: Can't find vertex %s" % vertex.name)
-            return False
-        return True
+            return False, wronginfo
+        return True, ""
 
     # 删除边
-    def remove_edge(self, start_vertex_name, end_vertex_name):
+    def remove_edge(self, start_vertex_name: str, end_vertex_name: str):
         start_vertex = Vertex(str(start_vertex_name))
         end_vertex = Vertex(str(end_vertex_name))
+        wronginfo = ""
         if not self.has_edge(start_vertex_name, end_vertex_name):
-            return False
+            wronginfo = "Error: Can't find edge from " + start_vertex_name + " to " + end_vertex_name
+            print(wronginfo)
+            return False, wronginfo
         if start_vertex in self.adj_list:
             self.adj_list[start_vertex] = [edge for edge in self.adj_list[start_vertex]
                                            if edge.end_vertex.name != end_vertex.name]
         self.in_degree_dict[end_vertex] = self.in_degree_dict[end_vertex] - 1
-        return True
+        return True, wronginfo
 
     # 查找边
     def has_edge(self, start_vertex_name, end_vertex_name):

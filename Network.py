@@ -3,8 +3,8 @@ import sys
 import numpy as np
 from graph import Graph, Vertex, Edge
 from typing import Dict
-from PyQt5.QtCore import (QEasingCurve, QLineF, pyqtProperty,
-                          QParallelAnimationGroup, QPointF, QSequentialAnimationGroup,
+from PyQt5.QtCore import (QEasingCurve, QLineF,
+                          QParallelAnimationGroup, QPointF,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
 from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
@@ -237,11 +237,14 @@ class GraphView(QGraphicsView):
             self._nodes_map.pop(node)
             self.scene().removeItem(item)
         # 删除边
+        edge_del_list = []
         for edge in self.edge_map.keys():
             if edge.end_vertex == node or edge.start_vertex == node:
                 item = self.edge_map[edge]
-                self._nodes_map.pop(edge)
+                edge_del_list.append(edge)
                 self.scene().removeItem(item)
+        for edge in edge_del_list:
+            self.edge_map.pop(edge)
 
     def remove_edge(self, edge: Edge):
         # 删除边
@@ -371,7 +374,6 @@ class GraphView(QGraphicsView):
                 self.scene().addItem(item)
                 self.edge_map[edge] = item
         self.set_layout()
-
 
 
 class MainWindow(QWidget):
