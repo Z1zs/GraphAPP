@@ -1,7 +1,7 @@
 import math
 import sys
 import numpy as np
-from graph import Graph, Vertex, Edge
+from Graph import Graph, Vertex, Edge
 from typing import Dict
 from PyQt5.QtCore import (QEasingCurve, QLineF,
                           QParallelAnimationGroup, QPointF,
@@ -194,6 +194,8 @@ class GraphView(QGraphicsView):
         # 载入组件
         self._load_graph()
 
+
+
     def topo_layout(self):
         (is_topo, tplist) = TopologicalSort(self._graph)
         # 非拓扑序列补齐
@@ -354,7 +356,7 @@ class GraphView(QGraphicsView):
         self.cpath, self.vedict, self.vldict, self.edict, self.ldict, self.ddict = CriticalPath(self._graph)
         # 添加顶点
         for node in self._graph.adj_list.keys():
-            data = {"showif": 0, "vevalue": self.vedict[node], "vlvalue": self.vldict[node]}
+            data = {"showif": 1, "vevalue": self.vedict[node], "vlvalue": self.vldict[node]}
             item = NodeItem(node.name, data)
             self.scene().addItem(item)
             self._nodes_map[node] = item
@@ -374,45 +376,3 @@ class GraphView(QGraphicsView):
                 self.scene().addItem(item)
                 self.edge_map[edge] = item
         self.set_layout()
-
-
-class MainWindow(QWidget):
-    def __init__(self, _graph):
-        super().__init__()
-
-        self.graph = _graph
-        self.view = GraphView(self.graph)
-        v_layout = QVBoxLayout(self)
-        v_layout.addWidget(self.view)
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    # Create a networkx graph
-    graph = Graph()
-    graph.add_vertex("v1")
-    graph.add_vertex("v2")
-    graph.add_vertex("v3")
-    graph.add_vertex("v4")
-    graph.add_vertex("v5")
-    graph.add_vertex("v6")
-    graph.add_vertex("v7")
-    graph.add_vertex("v8")
-    graph.add_vertex("v9")
-
-    graph.add_edge("v1", "v2", 6)
-    graph.add_edge("v1", "v3", 4)
-    graph.add_edge("v1", "v4", 5)
-    graph.add_edge("v2", "v5", 1)
-    graph.add_edge("v3", "v5", 1)
-    graph.add_edge("v4", "v6", 2)
-    graph.add_edge("v5", "v7", 9)
-    graph.add_edge("v5", "v8", 7)
-    graph.add_edge("v6", "v8", 4)
-    graph.add_edge("v7", "v9", 2)
-    graph.add_edge("v8", "v9", 4)
-    widget = MainWindow(graph)
-    widget.show()
-    widget.resize(800, 600)
-    sys.exit(app.exec())

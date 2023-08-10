@@ -6,7 +6,7 @@ from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
 from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
                              QGraphicsObject, QGraphicsScene, QGraphicsView,
                              QStyleOptionGraphicsItem, QVBoxLayout, QWidget)
-from graph import Graph, Vertex, Edge
+from Graph import Graph, Vertex, Edge
 import math
 import sys
 import copy
@@ -238,45 +238,3 @@ class AdjiontListView(QGraphicsView):
             row += 1
         # 调整布局动画
         self.locate_animations.start()
-
-
-class MainWindow(QWidget):
-    def __init__(self, _graph):
-        super().__init__()
-
-        self.graph = _graph
-        self.view = AdjiontListView(self.graph)
-        v_layout = QVBoxLayout(self)
-        v_layout.addWidget(self.view)
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    # Create a networkx graph
-    graph = Graph()
-    graph.add_vertex("v1")
-    graph.add_vertex("v2")
-    graph.add_vertex("v3")
-    graph.add_vertex("v4")
-    graph.add_vertex("v5")
-    graph.add_vertex("v6")
-    graph.add_vertex("v7")
-    graph.add_vertex("v8")
-    graph.add_vertex("v9")
-
-    graph.add_edge("v1", "v2", 6)
-    graph.add_edge("v1", "v3", 4)
-    graph.add_edge("v1", "v4", 5)
-    graph.add_edge("v2", "v5", 1)
-    graph.add_edge("v3", "v5", 1)
-    graph.add_edge("v4", "v6", 2)
-    graph.add_edge("v5", "v7", 9)
-    graph.add_edge("v5", "v8", 7)
-    graph.add_edge("v6", "v8", 4)
-    graph.add_edge("v7", "v9", 2)
-    graph.add_edge("v8", "v9", 4)
-    widget = MainWindow(graph)
-    widget.show()
-    widget.resize(800, 600)
-    sys.exit(app.exec())
