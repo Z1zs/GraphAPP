@@ -1,6 +1,6 @@
 from Network import NodeItem, EdgeItem
 import sys
-from graph import Graph, Vertex
+from Graph import Graph, Vertex
 from PyQt5.QtCore import (QEasingCurve,
                           QParallelAnimationGroup, QPointF,
                           QPropertyAnimation)
@@ -95,10 +95,10 @@ class SortColumn(QGraphicsView):
 
 
 class PathColumn(QGraphicsView):
-    def __init__(self, edge_list):
+    def __init__(self, edge_list,dist_dict):
         # 数据成员
         super().__init__()
-        self.path = SplitPath(edge_list)
+        self.path = SplitPath(edge_list,dist_dict)
         self._nodes_map = {}
         self._edges_map = {}
         # 图形参数
@@ -159,54 +159,12 @@ class PathColumn(QGraphicsView):
         self._edges_map.clear()
         self._nodes_map.clear()
 
-    def myupdate(self, new_edge_list):
+    def myupdate(self, new_edge_list,dist_dict):
         self.myclear()
-        self.path = SplitPath(new_edge_list)
+        self.path = SplitPath(new_edge_list,dist_dict)
         self._nodes_map = {}
         self._edges_map = {}
         # 加载路径
         if len(new_edge_list) > 0:
             self.load_path()
 
-
-class MainWindow(QWidget):
-    def __init__(self, _graph):
-        super().__init__()
-
-        self._graph = _graph
-        _, self.tplist = TopologicalSort(self._graph)
-        self.view = SortColumn(self.tplist)
-        v_layout = QVBoxLayout(self)
-        v_layout.addWidget(self.view)
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    # Create a networkx graph
-    graph = Graph()
-    graph.add_vertex("v1")
-    graph.add_vertex("v2")
-    graph.add_vertex("v3")
-    graph.add_vertex("v4")
-    graph.add_vertex("v5")
-    graph.add_vertex("v6")
-    graph.add_vertex("v7")
-    graph.add_vertex("v8")
-    graph.add_vertex("v9")
-
-    graph.add_edge("v1", "v2", 6)
-    graph.add_edge("v1", "v3", 4)
-    graph.add_edge("v1", "v4", 5)
-    graph.add_edge("v2", "v5", 1)
-    graph.add_edge("v3", "v5", 1)
-    graph.add_edge("v4", "v6", 2)
-    graph.add_edge("v5", "v7", 9)
-    graph.add_edge("v5", "v8", 7)
-    graph.add_edge("v6", "v8", 4)
-    graph.add_edge("v7", "v9", 2)
-    graph.add_edge("v8", "v9", 4)
-    widget = MainWindow(graph)
-    widget.show()
-    widget.resize(800, 600)
-    sys.exit(app.exec())

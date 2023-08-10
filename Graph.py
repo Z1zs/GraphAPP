@@ -188,6 +188,14 @@ class Graph:
         else:
             return False
 
+    # 获取所有出度为0的点
+    def get_dist(self):
+        dist_list = []
+        for node in self.in_degree_dict.keys():
+            if len(self.adj_list[node]) == 0:
+                dist_list.append(node)
+        return dist_list
+
     # 打印各顶点与边信息，方便debug
     def display(self):
         for v in self.adj_list.keys():

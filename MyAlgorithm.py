@@ -1,4 +1,4 @@
-from graph import Graph, Vertex, Edge
+from Graph import Graph, Vertex, Edge
 from typing import List, Dict
 import copy
 
@@ -112,15 +112,14 @@ def DPath(edict: Dict[Edge, int], ldict: Dict[Edge, int]):
 
 # 将关键路径拆分（即处理多条路径情况）
 
-def SplitPath(edge_list):
+def SplitPath(edge_list, dist_dict):
     if len(edge_list) <= 1:
         return edge_list
     path_list = []
-    dist = edge_list[-1].end_vertex
 
     path_list.append(edge_list[0])
     tmp = edge_list[0].end_vertex
-    while tmp != dist:
+    while tmp not in dist_dict:
         for edge in edge_list:
             if edge.start_vertex == tmp:
                 path_list.append(edge)
@@ -209,31 +208,3 @@ def CheckConnectivity(_graph: Graph):
         return True
     else:
         return False
-
-
-if __name__ == "__main__":
-    graph = Graph()
-    graph.add_vertex("v1")
-    graph.add_vertex("v2")
-    graph.add_vertex("v3")
-    graph.add_vertex("v4")
-    graph.add_vertex("v5")
-    graph.add_vertex("v6")
-    graph.add_vertex("v7")
-    graph.add_vertex("v8")
-    graph.add_vertex("v9")
-
-    graph.add_edge("v1", "v2", 6)
-    graph.add_edge("v1", "v3", 4)
-    graph.add_edge("v1", "v4", 5)
-    graph.add_edge("v2", "v5", 1)
-    graph.add_edge("v3", "v5", 1)
-    graph.add_edge("v4", "v6", 2)
-    graph.add_edge("v5", "v7", 9)
-    graph.add_edge("v5", "v8", 7)
-    graph.add_edge("v6", "v8", 4)
-    graph.add_edge("v7", "v9", 2)
-    graph.add_edge("v8", "v9", 4)
-
-    graph.remove_vertex("v1")
-    CheckConnectivity(graph)

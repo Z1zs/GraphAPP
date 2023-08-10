@@ -1,6 +1,7 @@
 import sys
-from graph import Graph, Vertex, Edge
-from PyQt5.QtCore import (QSequentialAnimationGroup, QParallelAnimationGroup, QState, QAbstractAnimation)
+from pathlib import Path
+from Graph import Graph, Vertex, Edge
+from PyQt5.QtCore import (QSequentialAnimationGroup, QParallelAnimationGroup, QAbstractAnimation)
 from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QDialogButtonBox, QDialog, QLabel, QLineEdit, QVBoxLayout,
                              QWidget, QHBoxLayout, QMessageBox, QMainWindow, QAction)
 from AdjointListVisualization import AdjiontListView
@@ -203,9 +204,9 @@ class AddEdgeDialog(QDialog):
             return False
 
 
-class MainWindow(QMainWindow):
+class MyMainWindow(QMainWindow):
     def __init__(self, _graph: Graph):
-        super(MainWindow, self).__init__()
+        super(MyMainWindow, self).__init__()
         self.setWindowTitle("Graph APP")
 
         self._graph = _graph
@@ -222,7 +223,7 @@ class MainWindow(QMainWindow):
         self.sort_label = QLabel("Click [Update] to show the topo sequential of nodes:")
         self.sort_column = SortColumn([])
         self.path_label = QLabel("Click [Update] to show (one of) the critical path of the graph:")
-        self.path_column = PathColumn([])
+        self.path_column = PathColumn([], [])
 
         self.left_layout = QVBoxLayout()
         self.left_layout.addWidget(self.sort_label, 1)
@@ -243,10 +244,8 @@ class MainWindow(QMainWindow):
         self.central_widget = QWidget()
         self.central_widget.setLayout(self._layout)
         self.setCentralWidget(self.central_widget)
-        self.setBaseSize(2000, 2000)
-
         self._load_menu()
-        # self.run_tutorial_box()
+        self.setMinimumSize(1800, 900)
 
     def run_tutorial_box(self):
         self.tutorial_box = QMessageBox(self)
@@ -312,7 +311,7 @@ class MainWindow(QMainWindow):
     def _load_menu(self):
         menu = self.menuBar()
         # 菜单第一栏，展示栏
-        show_menu = menu.addMenu("Show")
+        show_menu = menu.addMenu("show")
         #  拓扑排序子菜单  #
         show_topo_menu = show_menu.addMenu("Topo Sort")
         #   播放拓扑排序动画   #
@@ -326,11 +325,11 @@ class MainWindow(QMainWindow):
         recover_action.triggered.connect(self.recover_all)
         show_topo_menu.addAction(recover_action)
         #  显示关键路径  #
-        show_critical_path_action = QAction("Critical Path", self)
-        show_critical_path_action.setStatusTip("Show Critical Path in Network")
-        show_critical_path_action.triggered.connect(self.show_critical_path)
-        show_critical_path_action.setCheckable(True)
-        show_menu.addAction(show_critical_path_action)
+        self.show_critical_path_action = QAction("Critical Path", self)
+        self.show_critical_path_action.setStatusTip("Show Critical Path in Network")
+        self.show_critical_path_action.triggered.connect(self.show_critical_path)
+        self.show_critical_path_action.setCheckable(True)
+        show_menu.addAction(self.show_critical_path_action)
 
         # 菜单第二栏，编辑栏
         edit_menu = menu.addMenu("Edit")
@@ -385,6 +384,12 @@ class MainWindow(QMainWindow):
                 self.topo_animation.stop()
                 self.recover_all()
                 self._update_dialog()
+        if self.show_critical_path_action.isChecked():
+            WrongDialog = QMessageBox(self)
+            WrongDialog.setWindowTitle("Warning")
+            WrongDialog.setText("Please stop showing critical path first!")
+            WrongDialog.exec()
+            return False
         self.add_node_dlg = AddNodeDialog(self)
         self.add_node_dlg.exec()
 
@@ -398,6 +403,12 @@ class MainWindow(QMainWindow):
                 self.topo_animation.stop()
                 self.recover_all()
                 self._update_dialog()
+        if self.show_critical_path_action.isChecked():
+            WrongDialog = QMessageBox(self)
+            WrongDialog.setWindowTitle("Warning")
+            WrongDialog.setText("Please stop showing critical path first!")
+            WrongDialog.exec()
+            return False
         self.add_edge_dlg = AddEdgeDialog(self)
         self.add_edge_dlg.exec()
 
@@ -411,6 +422,12 @@ class MainWindow(QMainWindow):
                 self.topo_animation.stop()
                 self.recover_all()
                 self._update_dialog()
+        if self.show_critical_path_action.isChecked():
+            WrongDialog = QMessageBox(self)
+            WrongDialog.setWindowTitle("Warning")
+            WrongDialog.setText("Please stop showing critical path first!")
+            WrongDialog.exec()
+            return False
         self.del_node_dlg = DeleteNodeDialog(self)
         self.del_node_dlg.exec()
 
@@ -424,6 +441,12 @@ class MainWindow(QMainWindow):
                 self.topo_animation.stop()
                 self.recover_all()
                 self._update_dialog()
+        if self.show_critical_path_action.isChecked():
+            WrongDialog = QMessageBox(self)
+            WrongDialog.setWindowTitle("Warning")
+            WrongDialog.setText("Please stop showing critical path first!")
+            WrongDialog.exec()
+            return False
         self.del_edge_dlg = DeleteEdgeDialog(self)
         self.del_edge_dlg.exec()
 
@@ -454,7 +477,8 @@ class MainWindow(QMainWindow):
             self.topo_animation.addAnimation(self.topo_animation_map[node])
 
     def topo_sort(self):
-        self.load_topo_animation()
+        if self.topo_animation_map == {}:
+            self.load_topo_animation()
         if self.topo_animation.state() == QAbstractAnimation.Stopped:
             self.topo_animation.start()
             return QAbstractAnimation.Running
@@ -466,9 +490,10 @@ class MainWindow(QMainWindow):
             return QAbstractAnimation.Paused
 
     def recover_all(self):
-        if self.topo_animation.state() == QAbstractAnimation.Running:
-            self.topo_animation.stop()
-            self._update_dialog()
+        if self.topo_animation_map != {}:
+            if self.topo_animation.state() == QAbstractAnimation.Running:
+                self.topo_animation.stop()
+                self._update_dialog()
         self.adjoint_widget.recover_all_animation()
         anime = self.graph_widget.recover_all_animation()
         anime.start()
@@ -481,6 +506,10 @@ class MainWindow(QMainWindow):
                 self._update_dialog()
         self.show_critical_path_flag = ~self.show_critical_path_flag
         if self.show_critical_path_flag:
+            if not self._update_dialog():
+                self.show_critical_path_flag = ~self.show_critical_path_flag
+                self.show_critical_path_action.setChecked(False)
+                return False
             self.graph_widget._load_critical_path()
         else:
             self.graph_widget._load_graph()
@@ -511,7 +540,7 @@ class MainWindow(QMainWindow):
         self.path_list, _, _, _, _, _ = CriticalPath(self._graph)
         if self.ifdag:
             self.sort_column.myupdate(self.sort_node_list)
-            self.path_column.myupdate(self.path_list)
+            self.path_column.myupdate(self.path_list, self._graph.get_dist())
         else:
             WrongDialog = QMessageBox(self)
             WrongDialog.setWindowTitle("Warning")
@@ -519,35 +548,3 @@ class MainWindow(QMainWindow):
             WrongDialog.exec()
             return False
         return True
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    # Create a networkx graph
-    graph = Graph()
-    graph.add_vertex("v1")
-    graph.add_vertex("v2")
-    graph.add_vertex("v3")
-    graph.add_vertex("v4")
-    graph.add_vertex("v5")
-    graph.add_vertex("v6")
-    graph.add_vertex("v7")
-    graph.add_vertex("v8")
-    graph.add_vertex("v9")
-
-    graph.add_edge("v1", "v2", 6)
-    graph.add_edge("v1", "v3", 4)
-    graph.add_edge("v1", "v4", 5)
-    graph.add_edge("v2", "v5", 1)
-    graph.add_edge("v3", "v5", 1)
-    graph.add_edge("v4", "v6", 2)
-    graph.add_edge("v5", "v7", 9)
-    graph.add_edge("v5", "v8", 7)
-    graph.add_edge("v6", "v8", 4)
-    graph.add_edge("v7", "v9", 2)
-    graph.add_edge("v8", "v9", 4)
-    widget = MainWindow(graph)
-    widget.show()
-    widget.resize(800, 600)
-    sys.exit(app.exec())
