@@ -1,8 +1,6 @@
-import sys
-from pathlib import Path
 from Graph import Graph, Vertex, Edge
 from PyQt5.QtCore import (QSequentialAnimationGroup, QParallelAnimationGroup, QAbstractAnimation)
-from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QDialogButtonBox, QDialog, QLabel, QLineEdit, QVBoxLayout,
+from PyQt5.QtWidgets import (QDoubleSpinBox, QDialogButtonBox, QDialog, QLabel, QLineEdit, QVBoxLayout,
                              QWidget, QHBoxLayout, QMessageBox, QMainWindow, QAction)
 from AdjointListVisualization import AdjiontListView
 from ColumnItem import PathColumn, SortColumn
@@ -477,8 +475,7 @@ class MyMainWindow(QMainWindow):
             self.topo_animation.addAnimation(self.topo_animation_map[node])
 
     def topo_sort(self):
-        if self.topo_animation_map == {}:
-            self.load_topo_animation()
+        self.load_topo_animation()
         if self.topo_animation.state() == QAbstractAnimation.Stopped:
             self.topo_animation.start()
             return QAbstractAnimation.Running

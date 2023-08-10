@@ -1,5 +1,4 @@
 import math
-import sys
 import numpy as np
 from Graph import Graph, Vertex, Edge
 from typing import Dict
@@ -7,9 +6,8 @@ from PyQt5.QtCore import (QEasingCurve, QLineF,
                           QParallelAnimationGroup, QPointF,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
-from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
-                             QGraphicsObject, QGraphicsScene, QGraphicsView,
-                             QStyleOptionGraphicsItem, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsObject, QGraphicsScene, QGraphicsView,
+                             QStyleOptionGraphicsItem, QWidget)
 
 from MyAlgorithm import CriticalPath, TopologicalSort
 
@@ -193,8 +191,6 @@ class GraphView(QGraphicsView):
         self.hidden_animation_map = {}
         # 载入组件
         self._load_graph()
-
-
 
     def topo_layout(self):
         (is_topo, tplist) = TopologicalSort(self._graph)

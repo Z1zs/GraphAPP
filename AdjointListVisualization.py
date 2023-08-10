@@ -3,12 +3,11 @@ from PyQt5.QtCore import (QEasingCurve, QLineF,
                           QPropertyAnimation, QRectF, Qt)
 from PyQt5.QtCore import pyqtProperty
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
-from PyQt5.QtWidgets import (QApplication, QGraphicsItem,
+from PyQt5.QtWidgets import (QGraphicsItem,
                              QGraphicsObject, QGraphicsScene, QGraphicsView,
-                             QStyleOptionGraphicsItem, QVBoxLayout, QWidget)
+                             QStyleOptionGraphicsItem, QWidget)
 from Graph import Graph, Vertex, Edge
 import math
-import sys
 import copy
 
 

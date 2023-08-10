@@ -115,9 +115,7 @@ def DPath(edict: Dict[Edge, int], ldict: Dict[Edge, int]):
 def SplitPath(edge_list, dist_dict):
     if len(edge_list) <= 1:
         return edge_list
-    path_list = []
-
-    path_list.append(edge_list[0])
+    path_list = [edge_list[0]]
     tmp = edge_list[0].end_vertex
     while tmp not in dist_dict:
         for edge in edge_list:
