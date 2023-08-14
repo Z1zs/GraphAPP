@@ -16,7 +16,7 @@ except ImportError:
     pass
 
 
-def CreatGraph():
+def CreateGraph():
     _graph = Graph()
     _graph.add_vertex("v1")
     _graph.add_vertex("v2")
@@ -46,7 +46,7 @@ def CreatGraph():
 
 if __name__ == '__main__':
     # Create a networkx graph
-    graph = CreatGraph()
+    graph = CreateGraph()
     app = QApplication(sys.argv)
     app.setStyleSheet(Path('style.qss').read_text())
     app.setWindowIcon(QIcon(os.path.join(basedir, 'graph.ico')))

@@ -103,7 +103,7 @@ class NodeElement(QGraphicsObject):
 
 
 # 邻接链表组件
-class AdjiontListView(QGraphicsView):
+class AdjacencyListView(QGraphicsView):
     def __init__(self, _graph: Graph):
         # 数据成员
         super().__init__()

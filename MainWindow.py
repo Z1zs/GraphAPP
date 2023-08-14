@@ -2,7 +2,7 @@ from Graph import Graph, Vertex, Edge
 from PyQt5.QtCore import (QSequentialAnimationGroup, QParallelAnimationGroup, QAbstractAnimation)
 from PyQt5.QtWidgets import (QDoubleSpinBox, QDialogButtonBox, QDialog, QLabel, QLineEdit, QVBoxLayout,
                              QWidget, QHBoxLayout, QMessageBox, QMainWindow, QAction)
-from AdjointListVisualization import AdjiontListView
+from AdjointListVisualization import AdjacencyListView
 from ColumnItem import PathColumn, SortColumn
 from Network import GraphView
 from MyAlgorithm import TopologicalSort, CriticalPath, CheckConnectivity
@@ -213,7 +213,7 @@ class MyMainWindow(QMainWindow):
         self.anime_running_flag = False
         # 添加组件
         self.list_label = QLabel("The adjoint list of graph:")
-        self.adjoint_widget = AdjiontListView(self._graph)
+        self.adjoint_widget = AdjacencyListView(self._graph)
         self.network_label = QLabel("The network view of graph:")
         self.graph_widget = GraphView(self._graph)
         self.show_critical_path_flag = False
